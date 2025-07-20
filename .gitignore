@@ -33,7 +33,12 @@ flash-attention/
 # ──────────────────────────────────────────────
 # 5. Datasets / generated CSV-JSON-TXT
 # ──────────────────────────────────────────────
-data/
+data/*.jpg
+# Ignore only data files, not code
+qwen-vl-finetune/qwenvl/data/*.json
+qwen-vl-finetune/qwenvl/data/*.txt
+!qwen-vl-finetune/qwenvl/data/*.py
+
 bb/
 qwen-vl-finetune/**/*.csv
 qwen-vl-finetune/**/*.json
