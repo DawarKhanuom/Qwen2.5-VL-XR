@@ -1,14 +1,19 @@
 import re
 
-# Define placeholders for dataset paths
+# Define dataset configs
+MY_DATASET = {
+    "annotation_path": "/ibex/scratch/khand0b/qwen/data/train_dk_normalized.json",
+    "data_path": "/ibex/scratch/khand0b/qwen/data/train_dk/",
+}
+
 CAMBRIAN_737K = {
     "annotation_path": "PATH_TO_CAMBRIAN_737K_ANNOTATION",
     "data_path": "",
 }
 
 CAMBRIAN_737K_PACK = {
-    "annotation_path": f"PATH_TO_CAMBRIAN_737K_ANNOTATION_PACKED",
-    "data_path": f"",
+    "annotation_path": "PATH_TO_CAMBRIAN_737K_ANNOTATION_PACKED",
+    "data_path": "",
 }
 
 MP_DOC = {
@@ -26,7 +31,9 @@ VIDEOCHATGPT = {
     "data_path": "PATH_TO_VIDEOCHATGPT_DATA",
 }
 
+# ✅ Final merged dictionary including all datasets
 data_dict = {
+    "my_dataset": MY_DATASET,
     "cambrian_737k": CAMBRIAN_737K,
     "cambrian_737k_pack": CAMBRIAN_737K_PACK,
     "mp_doc": MP_DOC,
@@ -34,20 +41,19 @@ data_dict = {
     "videochatgpt": VIDEOCHATGPT,
 }
 
-
+# Parsing utilities
 def parse_sampling_rate(dataset_name):
     match = re.search(r"%(\d+)$", dataset_name)
     if match:
         return int(match.group(1)) / 100.0
     return 1.0
 
-
 def data_list(dataset_names):
     config_list = []
     for dataset_name in dataset_names:
         sampling_rate = parse_sampling_rate(dataset_name)
         dataset_name = re.sub(r"%(\d+)$", "", dataset_name)
-        if dataset_name in data_dict.keys():
+        if dataset_name in data_dict:
             config = data_dict[dataset_name].copy()
             config["sampling_rate"] = sampling_rate
             config_list.append(config)
@@ -55,9 +61,9 @@ def data_list(dataset_names):
             raise ValueError(f"do not find {dataset_name}")
     return config_list
 
-
+# For testing only
 if __name__ == "__main__":
-    dataset_names = ["cambrian_737k"]
+    dataset_names = ["my_dataset"]
     configs = data_list(dataset_names)
     for config in configs:
         print(config)

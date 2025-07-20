@@ -18,8 +18,8 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
-from decord import VideoReader
-from torchcodec.decoders import VideoDecoder
+#from decord import VideoReader
+#from torchcodec.decoders import VideoDecoder
 import transformers
 
 from . import data_list
@@ -234,16 +234,51 @@ class LazySupervisedDataset(Dataset):
             print("No pre-calculated length available.")
             return np.array([1] * len(self.list_data_dict))
 
-    def process_image_unified(self, image_file):
-        processor = copy.deepcopy(self.data_args.image_processor)
-        image = Image.open(image_file).convert("RGB")
 
-        visual_processed = processor.preprocess(image, return_tensors="pt")
-        image_tensor = visual_processed["pixel_values"]
-        if isinstance(image_tensor, List):
-            image_tensor = image_tensor[0]
-        grid_thw = visual_processed["image_grid_thw"][0]
-        return image_tensor, grid_thw
+def process_image_unified(self, image_file):
+    processor = copy.deepcopy(self.data_args.image_processor)
+
+    try:
+        print(f"\n[DEBUG] Processing image: {image_file}")
+        image = Image.open(image_file).convert("RGB")
+    except Exception as e:
+        print(f"[ERROR] Failed to load image {image_file}: {e}")
+        raise
+
+    visual_processed = processor.preprocess(image, return_tensors="pt")
+    print(f"[DEBUG] visual_processed keys: {visual_processed.keys()}")
+
+    image_tensor = visual_processed["pixel_values"]
+    if isinstance(image_tensor, List):
+        image_tensor = image_tensor[0]
+
+    # Print before accessing image_grid_thw
+    if "image_grid_thw" not in visual_processed:
+        print(f"[ERROR] 'image_grid_thw' not found in visual_processed for image {image_file}")
+        raise KeyError("'image_grid_thw' not in visual_processed")
+
+    grid_thw_list = visual_processed["image_grid_thw"]
+    if not isinstance(grid_thw_list, list) or len(grid_thw_list) == 0:
+        print(f"[ERROR] grid_thw_list is empty or not a list: {grid_thw_list}")
+        raise IndexError("Empty image_grid_thw")
+
+    grid_thw = grid_thw_list[0]
+    return image_tensor, grid_thw
+
+
+
+
+
+    #def process_image_unified(self, image_file):
+     #   processor = copy.deepcopy(self.data_args.image_processor)
+      #  image = Image.open(image_file).convert("RGB")
+
+       # visual_processed = processor.preprocess(image, return_tensors="pt")
+        #image_tensor = visual_processed["pixel_values"]
+        #if isinstance(image_tensor, List):
+         #   image_tensor = image_tensor[0]
+        #grid_thw = visual_processed["image_grid_thw"][0]
+        #return image_tensor, grid_thw
 
     def process_video(self, video_file):
         decord_video = None

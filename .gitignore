@@ -1,10 +1,51 @@
-# python generated files
+# ──────────────────────────────────────────────
+# 1. Python build / packaging artefacts
+# ──────────────────────────────────────────────
 __pycache__/
-*.py[oc]
+*.py[co]
 build/
 dist/
 wheels/
 *.egg-info
 
-# venv
-.venv
+# ──────────────────────────────────────────────
+# 2. Virtual-envs
+# ──────────────────────────────────────────────
+.venv/
+venv/
+
+# ──────────────────────────────────────────────
+# 3. IDE / editor settings
+# ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp            # Vim swap files
+
+# ──────────────────────────────────────────────
+# 4. Model & checkpoint folders (big!)
+# ──────────────────────────────────────────────
+Qwen2.5-VL-3B-Instruct/
+qwen-vl-finetune/checkpoints*/      # any checkpoints*, checkpoints3*, …
+qwen-vl-finetune/qwen2.5-prepped-tokenizer/
+qwen-vl-finetune/cache/
+flash-attention/
+
+# ──────────────────────────────────────────────
+# 5. Datasets / generated CSV-JSON-TXT
+# ──────────────────────────────────────────────
+data/
+bb/
+qwen-vl-finetune/**/*.csv
+qwen-vl-finetune/**/*.json
+qwen-vl-finetune/**/*.txt
+
+# ──────────────────────────────────────────────
+# 6. Slurm logs & job scripts
+# ──────────────────────────────────────────────
+*.out
+#*.slurm
+
+# ──────────────────────────────────────────────
+# 7. Misc temp files
+# ──────────────────────────────────────────────
+qwen-vl-finetune/temp.csv

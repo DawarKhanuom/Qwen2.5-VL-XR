@@ -109,7 +109,7 @@ def train(attn_implementation="flash_attention_2"):
             cache_dir=training_args.cache_dir,
             attn_implementation=attn_implementation,
             torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
-        )
+        ).to("cuda")
         data_args.image_processor = AutoProcessor.from_pretrained(
             model_args.model_name_or_path,
         ).image_processor
@@ -120,7 +120,7 @@ def train(attn_implementation="flash_attention_2"):
             cache_dir=training_args.cache_dir,
             attn_implementation=attn_implementation,
             torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
-        )
+        ).to("cuda")
         data_args.image_processor = Qwen2VLImageProcessor.from_pretrained(
             model_args.model_name_or_path,
         )
@@ -147,25 +147,65 @@ def train(attn_implementation="flash_attention_2"):
         padding_side="right",
         use_fast=False,
     )
+    processor = transformers.AutoProcessor.from_pretrained(
+    model_args.model_name_or_path,
+    trust_remote_code=True
+    )
     set_model(model_args, model)
 
-    if torch.distributed.get_rank() == 0:
+    #if torch.distributed.get_rank() == 0:
+    if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
         model.visual.print_trainable_parameters()
         model.model.print_trainable_parameters()
-    
     if data_args.data_packing:
         data_module = make_supervised_data_module_packed(tokenizer=tokenizer, data_args=data_args)
     else:
         data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+    # trainer = Trainer(
+    # model=model,
+    # processing_class=processor,
+    # args=training_args,
+    # train_dataset=data_module["train_dataset"],
+    # eval_dataset=data_module.get("eval_dataset", None),
+    # data_collator=data_module.get("data_collator", None)
+    # )
     trainer = Trainer(
-        model=model, processing_class=tokenizer, args=training_args, **data_module
+    model=model,
+    processing_class=processor,
+    args=training_args,
+    train_dataset=data_module["train_dataset"],
+    eval_dataset=data_module.get("eval_dataset", None),
+    data_collator=data_module.get("data_collator", None)
     )
+    # trainer = Trainer(
+    #    model=model, processing_class=tokenizer, args=training_args, **data_module
+    # )
+    # trainer = Trainer(
+    # model=model,
+    # # tokenizer=tokenizer,
+    # processing_class=processor, 
+    # args=training_args,
+    # train_dataset=data_module["train_dataset"],
+    # eval_dataset=data_module.get("eval_dataset", None),
+    # data_collator=data_module.get("data_collator", None)
+    # )
+
+
+
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         logging.info("checkpoint found, resume training")
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
+
+    # ✅ Print training logs (loss, lr, etc.)
+    for log in trainer.state.log_history:
+        if 'loss' in log or 'learning_rate' in log:
+            print(log)
+
+    trainer.save_state()
+
     trainer.save_state()
     data_args.image_processor.save_pretrained(training_args.output_dir)
 

@@ -73,8 +73,7 @@ def preprocess_qwen_2_visual(
         input_id += tokenizer.apply_chat_template(
             [{"role": "system", "content": system_message}]
         )
-        target += [IGNORE_INDEX] * len(input_id)
-
+        target += [IGNORE_INDEX] * len(input_id) 
         for conv in source:
             try:
                 role = conv["role"]
@@ -90,10 +89,18 @@ def preprocess_qwen_2_visual(
                     new_parts = []
                     for i in range(len(parts) - 1):
                         new_parts.append(parts[i])
+                        if visual_replicate_index_image < len(grid_thw_image):
+                            visual_part = grid_thw_image[visual_replicate_index_image]
+                        else:
+                            print(f"[Warning] Skipping out-of-range index {visual_replicate_index_image} for sample {idx}")
+                            return {
+                                "input_ids": [],
+                                "labels": [],
+                                "attention_mask": []
+                            }
                         replacement = (
                             "<|vision_start|>"
-                            + f"<|image_pad|>"
-                            * grid_thw_image[visual_replicate_index_image]
+                            + f"<|image_pad|>" * visual_part
                             + "<|vision_end|>"
                         )
                         new_parts.append(replacement)
@@ -106,10 +113,18 @@ def preprocess_qwen_2_visual(
                     new_parts = []
                     for i in range(len(parts) - 1):
                         new_parts.append(parts[i])
+                        if visual_replicate_index_video < len(grid_thw_video):
+                            visual_part = grid_thw_video[visual_replicate_index_video]
+                        else:
+                            print(f"[Warning] Skipping out-of-range index {visual_replicate_index_video} for sample {idx}")
+                            return {
+                                "input_ids": [],
+                                "labels": [],
+                                "attention_mask": []
+                            }
                         replacement = (
                             "<|vision_start|>"
-                            + f"<|video_pad|>"
-                            * grid_thw_video[visual_replicate_index_video]
+                            + f"<|video_pad|>" * visual_part
                             + "<|vision_end|>"
                         )
                         new_parts.append(replacement)
@@ -117,6 +132,57 @@ def preprocess_qwen_2_visual(
                     new_parts.append(parts[-1])
                     content = "".join(new_parts)
 
+        # for conv in source:
+        #     try:
+        #         role = conv["role"]
+        #         content = conv["content"]
+        #     except:
+        #         role = conv["from"]
+        #         content = conv["value"]
+
+        #     role = roles.get(role, role)
+        #     if role == "user":
+        #         if "<image>" in content:
+        #             parts = content.split("<image>")
+        #             new_parts = []
+        #             for i in range(len(parts) - 1):
+        #                 new_parts.append(parts[i])
+        #                 if visual_replicate_index_image < len(grid_thw_image):
+        #                     visual_part = grid_thw_image[visual_replicate_index_image]
+        #                 else:
+        #                     print(f"[Warning] Skipping out-of-range index {visual_replicate_index_image}")
+        #                     return None
+        #                 replacement = (
+        #                     "<|vision_start|>"
+        #                     + f"<|image_pad|>" * visual_part
+        #                     + "<|vision_end|>"
+        #                 )
+        #                 new_parts.append(replacement)
+        #                 visual_replicate_index_image += 1
+        #             new_parts.append(parts[-1])
+        #             content = "".join(new_parts)
+
+        #         if "<video>" in content:
+        #             parts = content.split("<video>")
+        #             new_parts = []
+        #             for i in range(len(parts) - 1):
+        #                 new_parts.append(parts[i])
+        #                 if visual_replicate_index_video < len(grid_thw_video):
+        #                     visual_part = grid_thw_video[visual_replicate_index_video]
+        #                 else:
+        #                     print(f"[Warning] Skipping out-of-range index {visual_replicate_index_image}")
+        #                     return None
+        #                 replacement = (
+        #                     "<|vision_start|>"
+        #                     + f"<|video_pad|>" * visual_part
+        #                     + "<|vision_end|>"
+        #                 )
+        #                 new_parts.append(replacement)
+        #                 visual_replicate_index_video += 1
+        #             new_parts.append(parts[-1])
+        #             content = "".join(new_parts)
+
+#------------------------------------------
             conv = [{"role": role, "content": content}]
             encode_id = tokenizer.apply_chat_template(conv)
             input_id += encode_id
@@ -133,7 +199,6 @@ def preprocess_qwen_2_visual(
 
     input_ids = torch.tensor(input_ids, dtype=torch.long)
     targets = torch.tensor(targets, dtype=torch.long)
-
     return dict(
         input_ids=input_ids,
         labels=targets,
